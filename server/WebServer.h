@@ -22,10 +22,13 @@ protected:
 	// Handler for when a message is received from the client
 	virtual void onMessageReceived(int clientSocket, const char* msg, int length);
 
-	// MIME Type genenrator
-	void MIMEType(std::string *rType);
+	// Handler for when time out on poll,
+	virtual void onTimeOut();
 
 private:
 	std::string contentType;
+	
+	// MIME Type genenrator
+	int MIMEType(int cSocket, std::string *rType);
 };
 #endif

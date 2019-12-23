@@ -35,6 +35,7 @@ int TcpListener::init()
 	for (int i = 0; i < (MAX_CLIENTS + 1); ++i) {
 		m_master[i].fd = -1;
 		m_master[i].events = 0;
+		streamMe[i] = false;
 	}
 
 	// Add our first socket that we're interested in interacting with; the listening socket!
@@ -53,8 +54,14 @@ int TcpListener::run() {
 	while (running) {
 		std::cout << "[DEBUG:] Available seats " << available << " out of " << MAX_CLIENTS << std::endl;
 		m_master[0].events = (available > 0) ? POLLIN : 0;	// Updating the event based on the availability
+		
+		// 30 miliseconds to wait in case there are clients, 
+		// otherwise let's get stuck in poll until, some clients show up
+		m_timeout = (available == MAX_CLIENTS) ? -1 : 30;
 		// See who's talking to us
-		int socketCount = poll(m_master, MAX_CLIENTS, -1);	// Wait for connections
+		int socketCount = poll(m_master, MAX_CLIENTS, m_timeout);	
+		
+		if (!socketCount) onTimeOut();
 		// Is it an inbound communication?
 		if (m_master[0].revents == POLLIN) {
 			// Accept a new connection
@@ -128,6 +135,13 @@ void TcpListener::allocateClient(int client) {
 	m_master[i].events = POLLIN;
 }
 
+// Handler to allocate when a client explicitly ask for streaming data
+void TcpListener::allocateStreaming(int client) {
+	unsigned i = 1;
+	while(m_master[i].fd != client) i++;
+	streamMe[i] = true;
+}
+
 void TcpListener::deallocateClient(int client) {
 	unsigned i = 1; // starts at 1, because internal listener socket is at 0
 	
@@ -136,6 +150,7 @@ void TcpListener::deallocateClient(int client) {
 	
 	m_master[i].fd = -1;
 	m_master[i].events = 0;
+	streamMe[i] = false;
 }
 
 
@@ -143,27 +158,46 @@ void TcpListener::sendToClient(int clientSocket, const char* msg, int length) {
 	send(clientSocket, msg, length, 0);
 }
 
-void TcpListener::broadcastToClients(int sendingClient, const char* msg, int length)
-{
-	for (int i = 1; i < available; i++) {
+void TcpListener::broadcastToClients(int sendingClient, const char* msg, int length) {
+	int j = available;
+	int i = 1;			// start at 1, because the internal listener is at 0
+	while (j > 0) {		// Send to all available devices
 		int outSock = m_master[i].fd;
-		if (outSock != sendingClient) {
-			sendToClient(outSock, msg, length);
+		if (outSock > -1) {	
+			if (outSock != sendingClient) // dont sent to the one who's broadcasting
+				sendToClient(outSock, msg, length);
+			j--;
 		}
+		i++;
 	}
 }
 
-void TcpListener::onClientConnected(int clientSocket)
-{
+void TcpListener::streamToClients(const char* msg, int length) {
+	int j = available;
+	int i = 1;			// start at 1, because the internal listener is at 0
+	while (j > 0) {		// Send to all available devices
+		int outSock = m_master[i].fd;
+		if (outSock > -1) {	
+			if (streamMe[i])
+				sendToClient(outSock, msg, length);
+			j--;
+		}
+		i++;
+	}	
+}
+
+void TcpListener::onClientConnected(int clientSocket) {
 
 }
 
-void TcpListener::onClientDisconnected(int clientSocket)
-{
+void TcpListener::onClientDisconnected(int clientSocket) {
 
 }
 
-void TcpListener::onMessageReceived(int clientSocket, const char* msg, int length)
-{
+void TcpListener::onMessageReceived(int clientSocket, const char* msg, int length) {
+
+}
+
+void TcpListener::onTimeOut() {
 
 }
