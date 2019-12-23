@@ -1,11 +1,14 @@
 let img;
 
 function setup() {
-  createCanvas(720, 400);
   img = loadImage('CAReProducts.png');
+  console.log(img.width)
+  createCanvas(884, 417);
 }
 
 function draw() {
-	image(img, 0, height / 2, img.width / 2, img.height /2);
+	// console.log(img.height)
+	image(img, 0, 0, img.width / 2, img.height /2);
+	// image(img, 0, 0);
 	console.log("lol")
 }

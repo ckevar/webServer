@@ -20,5 +20,8 @@ protected:
 
 	// Handler for when a message is received from the client
 	virtual void onMessageReceived(int clientSocket, const char* msg, int length);
+
+	// MIME Type genenrator
+	void MIMEType();
 };
 #endif
