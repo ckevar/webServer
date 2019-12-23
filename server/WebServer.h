@@ -2,6 +2,7 @@
 #define WEB_SERVER_H
 
 #include "TcpListener.h"
+#include <string>
 
 class WebServer : public TcpListener
 {
@@ -22,6 +23,9 @@ protected:
 	virtual void onMessageReceived(int clientSocket, const char* msg, int length);
 
 	// MIME Type genenrator
-	void MIMEType();
+	void MIMEType(std::string *rType);
+
+private:
+	std::string contentType;
 };
 #endif

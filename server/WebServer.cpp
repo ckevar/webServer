@@ -22,6 +22,7 @@ void WebServer::onMessageReceived(int clientSocket, const char* msg, int length)
 	contentType = "text/html";
 	int errorCode = 404;
 	// If the GET request is valid, try and get the name
+	std::cout << msg << std::endl;
 	if (parsed.size() >= 3 && parsed[0] == "GET") {
 
 		requestedFile = parsed[1];
@@ -63,10 +64,10 @@ void WebServer::onMessageReceived(int clientSocket, const char* msg, int length)
 }
 
 
-void MIMEType(rType) {
-	int idx = requestedFile.size();
-	while (requestedFile[idx - 1] != '.') idx--; 
-	std::string mimetype = requestedFile.substr(idx);
+void WebServer::MIMEType(std::string *rType) {
+	int idx = rType->size();
+	while (rType->at(idx - 1) != '.') idx--; 
+	std::string mimetype = rType->substr(idx);
 
 	if (mimetype == "html")
 		contentType = "text/html";
