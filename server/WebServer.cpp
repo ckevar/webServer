@@ -21,7 +21,6 @@ void WebServer::onMessageReceived(int clientSocket, const char* msg, int length)
 	std::string requestedFile = "/index.html";
 	contentType = "text/html";
 	int errorCode = 404;
-	int stream = 0;
 	// If the GET request is valid, try and get the name
 	std::cout << msg << std::endl;
 	if (parsed.size() >= 3 && parsed[0] == "GET") {
@@ -33,59 +32,36 @@ void WebServer::onMessageReceived(int clientSocket, const char* msg, int length)
 		if (requestedFile == "/")
 			requestedFile = "/index.html";
 
-		stream = MIMEType(clientSocket, &requestedFile);
+		MIMEType(&requestedFile);
 
 	}
 	
 	std::ostringstream oss;
 
-	if (!stream) {
-		// Open the document in the local file system
-		std::ifstream f("../wwwroot" + requestedFile);
+	// Open the document in the local file system
+	std::ifstream f("../wwwroot" + requestedFile);
 
-		// Check if it opened and if it did, grab the entire contents
-		if (f.good()) {
-			std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-			content = str;
-			errorCode = 200;
-		}
-
-		f.close();
-
-		// Write the document back to the client
-		oss << "HTTP/1.1 " << errorCode << " OK\r\n";
-		oss << "Cache-Control: no-cache, private\r\n";
-		oss << "Content-Type: "<< contentType << "\r\n";
-		oss << "Content-Length: " << content.size() << "\r\n";
-		oss << "\r\n";
-		oss << content;
-
-
-	} else {
+	// Check if it opened and if it did, grab the entire contents
+	if (f.good()) {
+		std::string str((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+		content = str;
 		errorCode = 200;
-		oss << "HTTP/1.1 " << errorCode << " OK\r\n";
-		oss << "Cache-Control: no-cache, private\r\n";
-		oss << "Content-Type: "<< contentType << "\r\n";
-		oss << "data: Marcello!!! Wut u doing?!";
-		oss << "\n\n";
 	}
+
+	f.close();
+
+	// Write the document back to the client
+	oss << "HTTP/1.1 " << errorCode << " OK\r\n";
+	oss << "Cache-Control: no-cache, private\r\n";
+	oss << "Content-Type: "<< contentType << "\r\n";
+	oss << "Content-Length: " << content.size() << "\r\n";
+	oss << "\r\n";
+	oss << content;
 
 	std::string output = oss.str();
 	int size = output.size() + 1;
 
 	sendToClient(clientSocket, output.c_str(), size);
-}
-
-// Handler for when time out on poll,
-void WebServer::onTimeOut() {
-	std::ostringstream oss;
-	oss << "HTTP/1.1 200 OK\r\n";
-	oss << "Cache-Control: no-cache, private\r\n";
-	oss << "Content-Type: text/event-stream \r\n";
-	oss << "data: Marcello!!! Wut u doing?!\n\n";
-	std::string output = oss.str();
-	int size = output.size() + 1;
-	streamToClients(output.c_str(), size);
 }
 
 // Handler for client connections
@@ -98,7 +74,7 @@ void WebServer::onClientDisconnected(int clientSocket) {
 	
 }
 
-int WebServer::MIMEType(int cSocket, std::string *rType) {
+void WebServer::MIMEType(std::string *rType) {
 	int idx = rType->size();
 	while (rType->at(idx - 1) != '.') idx--; 
 	std::string mimetype = rType->substr(idx);
@@ -121,12 +97,5 @@ int WebServer::MIMEType(int cSocket, std::string *rType) {
 	else if (mimetype == "mp4")
 		contentType = "video/mp4";
 
-	else if (mimetype == "me") {
-		contentType = "text/event-stream";
-		allocateStreaming(cSocket);
-		return 1;
-	}
-
-	return 0;
 }
 
