@@ -13,6 +13,7 @@ int TcpListener::init()
 	m_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (m_socket < 0) {
 		fprintf(stderr,"[ERROR:] cannot open socket");
+		return -1;
 	}
 
 	// Bind the ip address and port to a socket
